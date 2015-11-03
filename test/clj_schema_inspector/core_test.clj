@@ -253,7 +253,7 @@
         :m {[:a :b "[]" :c]
             {:type s/Int :count 1 :mode :required :values {1 1}}}})
       =>
-      {:a {:b [{:c s/Int}]}}
+      (s/explain {:a {:b [{:c s/Int}]}})
       (inferred-schema
        {:count 1
         :m {[:a :b "[]" :c]
@@ -261,5 +261,22 @@
             [:a :b "[]" :d]
             {:type s/Int :count 1 :mode :required :values {1 1}}}})
       =>
-      {:a {:b [{:c s/Int :d s/Int}]}})
+      (s/explain {:a {:b [{:c s/Int :d s/Int}]}}))
+
+(fact "main test"
+      (inferred-schema
+       (inferred-schema-keys
+        [{:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3}]}}}]))
+      =>
+      (s/explain {:a {:b {:c s/Int :d s/Int :e [{:a s/Int :b s/Int :c s/Int}]}}})
+      (inferred-schema
+       (inferred-schema-keys
+        (concat
+         [{:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3} {:d 4} {:f 1}]}}}]
+         (take 20
+               (repeat {:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3} {:f "1"}]}}})))))
+      =>
+      (s/explain {:a {:b {:c s/Int :d s/Int :e [{:a s/Int :b s/Int
+                                                 :c s/Int :d (s/maybe s/Int)
+                                                 :f (s/either s/Int s/Str)}]}}}))
 

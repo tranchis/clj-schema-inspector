@@ -123,10 +123,11 @@
   (reduce add-map {} ms))
 
 (defn inferred-branch [m branch]
-  (assoc-in m (key branch) (:type (val branch))))
+  (assoc-in m (key branch) (val branch)))
 
 (defn fixed-sequences [m]
-  (if (map? m)
+  (if (and (map? m) (not (contains? m :type))
+           (not (contains? m :values)) (not (contains? m :mode)))
     (let [ks (keys m)]
       (reduce (fn [sub-m k]
                 (if (and (string? k)
@@ -135,7 +136,10 @@
                     (into struct [(fixed-sequences (get sub-m k))]))
                   (assoc sub-m k (fixed-sequences (get sub-m k)))))
               m ks))
-    m))
+    (let [t (:type m)
+          tt (if (set? t) (apply s/either t) t)
+          ps (if (= (:mode m) :required) tt (s/maybe tt))]
+      (s/explain ps))))
 
 (defn inferred-schema [schema]
   (fixed-sequences (reduce inferred-branch {} (:m schema))))
