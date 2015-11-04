@@ -268,15 +268,19 @@
        (inferred-schema-keys
         [{:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3}]}}}]))
       =>
-      (s/explain {:a {:b {:c s/Int :d s/Int :e [{:a s/Int :b s/Int :c s/Int}]}}})
+      (s/explain {:a {:b {:c s/Int :d s/Int
+                          :e [{:a s/Int :b s/Int :c s/Int}]}}})
       (inferred-schema
        (inferred-schema-keys
         (concat
-         [{:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3} {:d 4} {:f 1}]}}}]
+         [{:a {:b {:c 1 :d 2
+                   :e [{:a 1} {:b 2} {:c 3} {:d 4} {:f 1}]}}}]
          (take 20
-               (repeat {:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3} {:f "1"}]}}})))))
+               (repeat {:a {:b {:c 1 :d 2
+                                :e [{:a 1} {:b 2} {:c 3} {:f "1"}]}}})))))
       =>
-      (s/explain {:a {:b {:c s/Int :d s/Int :e [{:a s/Int :b s/Int
-                                                 :c s/Int :d (s/maybe s/Int)
-                                                 :f (s/either s/Int s/Str)}]}}}))
+      (s/explain {:a {:b {:c s/Int :d s/Int
+                          :e [{:a s/Int :b s/Int
+                               :c s/Int :d (s/maybe s/Int)
+                               :f (s/either s/Int s/Str)}]}}}))
 
