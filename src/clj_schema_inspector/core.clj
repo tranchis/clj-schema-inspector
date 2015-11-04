@@ -6,18 +6,23 @@
 
 (def coertions
   {String s/Str
-   clojure.lang.Symbol s/Symbol
-   clojure.lang.Keyword s/Keyword
+   clojure.lang.Keyword s/Str
    Double s/Num
    java.math.BigInteger s/Num
-   Long s/Int})
+   Long s/Num
+   Boolean s/Bool
+   java.util.regex.Pattern s/Regex
+   java.util.Date s/Inst
+   java.util.UUID s/Uuid})
 
 (defn m-class [obj]
-  (let [cl (class obj)
-        res (get coertions cl)]
-    (if (nil? res)
-      (throw (UnsupportedOperationException. (.getName cl)))
-      res)))
+  (if (nil? obj)
+    s/Any
+    (let [cl (class obj)
+          res (get coertions cl)]
+      (if (nil? res)
+        (throw (UnsupportedOperationException. (.getName cl)))
+        res))))
 
 (defn to-set [s]
   (if (set? s)
@@ -90,7 +95,9 @@
     new
     (let [type (inferred-type (:type orig) (:type new))
           count (+ (:count orig) (:count new))
-          values (merge-with + (:values orig) (:values new))]
+          values (if (= (:values orig) :not-enum)
+                   :not-enum
+                   (merge-with + (:values orig) (:values new)))]
       {:type type
        :values values
        :mode nil
@@ -98,14 +105,16 @@
 
 (defn polish-record [c m k]
   (let [v (get m k)
-        fs (map #(double (/ % c)) (vals (:values v)))
-        med (median fs)
         ratio (double (/ (:count v) c))
         mode (if (== 1 ratio)
                :required
                (if (>= ratio rare-threshold) :optional :rare))
-        res (if (and (> c big-number) (<= med 0.1))
-              (assoc-in m [k :values] :not-enum) m)]
+        res (if (= (:values v) :not-enum)
+              m
+              (let [fs (map #(double (/ % c)) (vals (:values v)))
+                    med (median fs)]
+                (if (and (> c big-number) (<= med 0.1))
+                  (assoc-in m [k :values] :not-enum) m)))]
     (assoc-in res [k :mode] mode)))
 
 (defn polish-values [c m]
