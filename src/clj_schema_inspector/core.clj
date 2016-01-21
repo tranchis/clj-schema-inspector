@@ -15,6 +15,38 @@
    java.util.Date s/Inst
    java.util.UUID s/Uuid})
 
+(def str->cl
+  {"s/Str" s/Str
+   "s/Num" s/Num
+   "s/Bool" s/Bool
+   "s/Regex" s/Regex
+   "s/Inst" s/Inst
+   "s/Uuid" s/Uuid
+   "s/maybe" 's/maybe
+   "s/either" 's/either
+   "s/both" 's/both})
+
+(def cl->str
+  {"Num" "s/Num"
+   "Str" "s/Str"
+   "Bool" "s/Bool"
+   "Regex" "s/Regex"
+   "Inst" "s/Inst"
+   "Uuid" "s/Uuid"
+   "maybe" "s/maybe"
+   "either" "s/either"
+   "both" "s/both"
+   Number "s/Num"
+   String "s/Str"
+   clojure.lang.Keyword "s/Str"
+   Double "s/Num"
+   java.math.BigInteger "s/Num"
+   Long "s/Num"
+   Boolean "s/Bool"
+   java.util.regex.Pattern "s/Regex"
+   java.util.Date "s/Inst"
+   java.util.UUID "s/Uuid"})
+
 (defn m-class [obj]
   (if (nil? obj)
     s/Any
@@ -150,6 +182,42 @@
           ps (if (= (:mode m) :required) tt (s/maybe tt))]
       (s/explain ps))))
 
-(defn inferred-schema [schema]
+(defn inferred-parsed-schema [schema]
   (fixed-sequences (reduce inferred-branch {} (:m schema))))
 
+(defn x-parse [f m]
+  (if (map? m)
+    (zipmap (keys m) (map #(x-parse f %) (vals m)))
+    (if (vector? m)
+      (into [] (map #(x-parse f %) m))
+      (if (seq? m)
+        (let [ff (first m)]
+          (if (symbol? ff)
+            (concat [(x-parse f (first m))] (map #(x-parse f %) (rest m)))
+            (map #(x-parse f %) m)))
+        (if (set? m)
+          (into #{} (map #(x-parse f %) m))
+          (if (number? m)
+            m
+            (if (keyword? m)
+              m
+              (if (class? m)
+                (f m)
+                (if (string? m)
+                  (if-let [res (f m)]
+                    res
+                    (throw (UnsupportedOperationException. (pr-str m))))
+                  (if (symbol? m)
+                    (if-let [res (f (name m))]
+                      res
+                      (throw (UnsupportedOperationException. (pr-str m))))
+                    (throw (UnsupportedOperationException.
+                            (str (class m) ":" (pr-str m))))))))))))))
+
+(defn serialise [m] (x-parse cl->str m))
+(defn deserialise [m] (x-parse str->cl m))
+
+(defn inferred-schema [m]
+  (let [parsed (deserialise m)
+        final (inferred-parsed-schema parsed)]
+    (serialise final)))

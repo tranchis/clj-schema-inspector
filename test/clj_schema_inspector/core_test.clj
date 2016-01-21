@@ -252,14 +252,14 @@
               :count 10000 :mode :required
               :values {1 2500 "1" 2500 d 2500 :1 2500}}}}))
 
-(fact "inferred-schema function"
-      (inferred-schema
+(fact "inferred-parsed-schema function"
+      (inferred-parsed-schema
        {:count 1
         :m {[:a :b "[]" :c]
             {:type s/Num :count 1 :mode :required :values {1 1}}}})
       =>
       (s/explain {:a {:b [{:c s/Num}]}})
-      (inferred-schema
+      (inferred-parsed-schema
        {:count 1
         :m {[:a :b "[]" :c]
             {:type s/Num :count 1 :mode :required :values {1 1}}
@@ -269,13 +269,13 @@
       (s/explain {:a {:b [{:c s/Num :d s/Num}]}}))
 
 (fact "main test"
-      (inferred-schema
+      (inferred-parsed-schema
        (inferred-schema-keys
         [{:a {:b {:c 1 :d 2 :e [{:a 1} {:b 2} {:c 3}]}}}]))
       =>
       (s/explain {:a {:b {:c s/Num :d s/Num
                           :e [{:a s/Num :b s/Num :c s/Num}]}}})
-      (inferred-schema
+      (inferred-parsed-schema
        (inferred-schema-keys
         (concat
          [{:a {:b {:c 1 :d 2
@@ -287,5 +287,34 @@
       (s/explain {:a {:b {:c s/Num :d s/Num
                           :e [{:a s/Num :b s/Num
                                :c s/Num :d (s/maybe s/Num)
-                               :f (s/either s/Num s/Str)}]}}}))
-
+                               :f (s/either s/Num s/Str)}]}}})
+      (println (pr-str (serialise
+                        (s/explain {:a {:b {:c s/Num :d s/Num
+                                            :e [{:a s/Num :b s/Num
+                                                 :c s/Num :d (s/maybe s/Num)
+                                                 :f (s/either s/Num s/Str)}]}}}))))
+      (serialise
+       (inferred-parsed-schema
+        (inferred-schema-keys
+         (concat
+          [{:a {:b {:c 1 :d 2
+                    :e [{:a 1} {:b 2} {:c 3} {:d 4} {:f 1}]}}}]
+          (take 20
+                (repeat {:a {:b {:c 1 :d 2
+                                 :e [{:a 1} {:b 2} {:c 3} {:f "1"}]}}}))))))
+      =>
+      (serialise
+       (s/explain {:a {:b {:c s/Num :d s/Num
+                           :e [{:a s/Num :b s/Num
+                                :c s/Num :d (s/maybe s/Num)
+                                :f (s/either s/Num s/Str)}]}}}))
+      (reduce (fn [p n]
+                (serialise (add-map (deserialise p) n)))
+              {}
+              (take 5000 (interleave (repeat {:a {:b [{:c 1}]}})
+                                     (repeat {:a {:b [{:d 2}]}}))))
+      =>
+      (serialise
+       {:count 5000
+        :m {[:a :b "[]" :c] {:type s/Num :count 2500 :mode :optional :values {1 2500}}
+            [:a :b "[]" :d] {:type s/Num :count 2500 :mode :optional :values {2 2500}}}}))
