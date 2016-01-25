@@ -1,4 +1,4 @@
-(defproject tranchis/clj-schema-inspector "0.3.0"
+(defproject tranchis/clj-schema-inspector "0.4.0"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
