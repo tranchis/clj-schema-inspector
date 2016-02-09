@@ -220,8 +220,10 @@
                     (if-let [res (f (name m))]
                       res
                       (throw (UnsupportedOperationException. (pr-str m))))
-                    (throw (UnsupportedOperationException.
-                            (str (class m) ":" (pr-str m))))))))))))))
+                    (if (nil? m)
+                      (f "s/Any")
+                      (throw (UnsupportedOperationException.
+                              (str (class m) ":" (pr-str m)))))))))))))))
 
 (defn serialise [m] (x-parse cl->str m))
 (defn deserialise [m] (x-parse str->cl m))
