@@ -11,6 +11,7 @@
    java.math.BigInteger s/Num
    Long s/Num
    Boolean s/Bool
+   java.lang.Integer s/Num
    java.util.regex.Pattern s/Regex
    java.util.Date s/Inst
    java.util.UUID s/Uuid})
